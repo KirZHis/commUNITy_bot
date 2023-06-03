@@ -172,16 +172,16 @@ def find_partner(message, partner_prof, partner_number):
     conn = sqlite3.connect('Answers.db')
     c = conn.cursor()
 
-    c.execute("SELECT * FROM Answers WHERE Profession = ? AND ID != ? AND State == 0", (partner_prof, message.chat.id))
-
     if message.text == "Начать поиск":
-        if c.fetchone() is None:
+        c.execute("SELECT * FROM Answers WHERE Profession = ? AND ID != ? AND State == 0",
+                  (partner_prof, message.chat.id))
+        if c is None:
             msg = bot.send_message(message.chat.id, 'Извините, напарник не найден. Просим набраться терпения.')
             bot.register_next_step_handler(msg, find_partner, partner_prof, partner_number)
         else:
             try:
-                partner = c.fetchone()[partner_number]
-                msg = bot.send_message(message.chat.id, f'Имя: {partner[1]} \n Возраст: {partner[2]} \n Место проживания: - {partner[3]} \n Рассказ о себе: {partner[5]}')
+                partner = c.fetchone()
+                msg = bot.send_message(message.chat.id, f'Имя: {partner[1]} \n Возраст: {partner[2]} \n Место проживания: - {partner[3]} \n Рассказ о себе: {partner[4]}')
                 bot.register_next_step_handler(msg, find_partner, partner_prof, partner_number=partner_number+1)
             except TypeError:
                 msg = bot.send_message(message.chat.id, 'Извините, напарник не найден. Просим набраться терпения. Или попробуйте еще раз.')
