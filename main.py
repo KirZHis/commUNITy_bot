@@ -14,6 +14,12 @@ cursor = conn.cursor()"""   # Если будет большой поток
 @bot.message_handler(commands=['start'])
 def start_message(message):
     user_states[message.chat.id] = 0
+
+    remove_markup = types.ReplyKeyboardRemove()
+    bot.send_message(message.chat.id,
+                     text="Здравствуйте.".format(
+                         message.from_user), reply_markup=remove_markup)
+
     markup = types.InlineKeyboardMarkup()
     btn1 = types.InlineKeyboardButton("Да", callback_data="1")
     btn2 = types.InlineKeyboardButton("Нет", callback_data="2")
@@ -107,8 +113,7 @@ def process_city_step(message, name, age):
     btn2 = types.KeyboardButton("Android разработчик")
     btn3 = types.KeyboardButton("Web разработчик")
     btn4 = types.KeyboardButton("Python разработчик")
-    btn5 = types.KeyboardButton("Никто")
-    markup.add(btn1, btn2, btn3, btn4, btn5)
+    markup.add(btn1, btn2, btn3, btn4)
 
     msg = bot.send_message(message.chat.id,
                            'Кто тебе интересен? Кого ты ищешь?', reply_markup=markup)
@@ -132,8 +137,7 @@ def process_about_step(message, name, age, city, partner_prof):
     btn2 = types.KeyboardButton("Android разработчик")
     btn3 = types.KeyboardButton("Web разработчик")
     btn4 = types.KeyboardButton("Python разработчик")
-    btn5 = types.KeyboardButton("Никто")
-    markup.add(btn1, btn2, btn3, btn4, btn5)
+    markup.add(btn1, btn2, btn3, btn4)
 
     msg = bot.send_message(message.chat.id,
                            'Кем из предложенных специалистов являешся ты сам?', reply_markup=markup)
@@ -184,25 +188,25 @@ def find_partner(message, partner_prof, partner_number):
     if message.text == "Начать поиск":
         c.execute("SELECT * FROM Answers WHERE Profession = ? AND ID != ? AND State == 0",
                   (partner_prof, message.chat.id))
-        if c is None:
+        """if c is None:
             msg = bot.send_message(message.chat.id, 'Извините, напарник не найден. Просим набраться терпения.')
             bot.register_next_step_handler(msg, find_partner, partner_prof, partner_number)
-        else:
-            try:
+        else:"""
+        try:
+            partner = c.fetchone()
+            for i in range(partner_number):
                 partner = c.fetchone()
-                for i in range(partner_number):
-                    partner = c.fetchone()
 
-                markup_later = types.InlineKeyboardMarkup()
-                btn_later = types.InlineKeyboardButton("USERNAME", callback_data=partner[0])
-                markup_later.add(btn_later)
+            markup_later = types.InlineKeyboardMarkup()
+            btn_later = types.InlineKeyboardButton("USERNAME", callback_data=partner[0])
+            markup_later.add(btn_later)
 
-                msg = bot.send_message(message.chat.id, f'Имя: {partner[1]} \n Возраст: {partner[2]} \n Место проживания: {partner[3]} \n О себе: {partner[4]}', reply_markup=markup_later)
+            msg = bot.send_message(message.chat.id, f'Имя: {partner[1]} \n Возраст: {partner[2]} \n Место проживания: {partner[3]} \n О себе: {partner[4]}', reply_markup=markup_later)
 
-                bot.register_next_step_handler(msg, find_partner, partner_prof, partner_number=partner_number+1)
-            except TypeError:
-                msg = bot.send_message(message.chat.id, 'Извините, напарник не найден. Просим набраться терпения. Или попробуйте еще раз.')
-                bot.register_next_step_handler(msg, find_partner, partner_prof, partner_number)
+            bot.register_next_step_handler(msg, find_partner, partner_prof, partner_number=partner_number+1)
+        except TypeError:
+            msg = bot.send_message(message.chat.id, 'Извините, напарник не найден. Просим набраться терпения. Или попробуйте еще раз.')
+            bot.register_next_step_handler(msg, find_partner, partner_prof, partner_number)
     elif message.text == "Пока не ищу партнера":
         c.execute('''
                         UPDATE Answers
